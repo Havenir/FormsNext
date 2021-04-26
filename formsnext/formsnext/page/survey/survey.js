@@ -1,5 +1,5 @@
 class Survey {
-	constructor(wrapper){
+	constructor(wrapper) {
 		const that = this;
 		this.wrapper = $(wrapper);
 		$(`
@@ -13,18 +13,24 @@ class Survey {
 					<i class="fas fa-chevron-down"></i>
 				</button>
 				<div class="dropdown-container">
+					<div class = "dropdown-list">
+					</div>
 				</div>
 				
 				<button class="dropdown-btn navTitle">Partially Completed
 					<i class="fas fa-chevron-down"></i>
 				</button>
 				<div class="dropdown-container">
+					<div class = "dropdown-list">
+					</div>
 				</div>
 
 				<button class="dropdown-btn navTitle">Completed
 					<i class="fas fa-chevron-down"></i>
 				</button>
 				<div class="dropdown-container">
+					<div class = "dropdown-list">
+					</div>
 				</div>
 				
 			</div>
@@ -43,8 +49,8 @@ class Survey {
 		$('.row.layout-main .layout-main-section-wrapper').css({ 'margin': '0px' });
 		this.container = this.wrapper.find(".dashboard-graph");
 		this.page = wrapper.page;
-		this.wrapper.find(".openbtn").click(()=>{
-			if (that.wrapper.find(".sidebar").css("width") == "250px"){
+		this.wrapper.find(".openbtn").click(() => {
+			if (that.wrapper.find(".sidebar").css("width") == "250px") {
 				that.wrapper.find(".sidebar").css("width", "250px");
 				that.wrapper.find(".dashboard").css("marginLeft", "250px");
 			} else {
@@ -53,12 +59,12 @@ class Survey {
 			}
 		});
 
-		this.wrapper.find(".closeNav").click(()=>{
+		this.wrapper.find(".closeNav").click(() => {
 			document.getElementById("mySidenav").style.width = "0";
 			that.wrapper.find(".dashboard").css("marginLeft", "45px");
 		});
 
-		this.wrapper.find(".openNav").click(()=>{
+		this.wrapper.find(".openNav").click(() => {
 			document.getElementById("mySidenav").style.width = "250px";
 			that.wrapper.find(".dashboard").css("marginLeft", "250px");
 		});
@@ -67,37 +73,37 @@ class Survey {
 		var i;
 
 		for (i = 0; i < dropdown.length; i++) {
-			dropdown[i].addEventListener("click", function() {
+			dropdown[i].addEventListener("click", function () {
 				this.classList.toggle("active");
 				var dropdownContent = this.nextElementSibling;
 				if (dropdownContent.style.display === "block") {
 					dropdownContent.style.display = "none";
 				} else {
-				dropdownContent.style.display = "block";
+					dropdownContent.style.display = "block";
 				}
 			});
 		}
-		
+
 
 		frappe.call({
 			method: "formsnext.formsnext.page.survey.survey.get_active_surveys",
-			callback: function(response){
-				response.message.forEach((survey)=>{
+			callback: function (response) {
+				response.message.forEach((survey) => {
 					var survey_link = '<a class="active-survey">' + survey['survey'] + '</a>'
-					if (survey['workflow_state'] == "Created"){
-						$('.dropdown-container').eq(0).after(survey_link)
+					if (survey['workflow_state'] == "Created") {
+						$('.dropdown-list').eq(0).after(survey_link)
 					} else if (survey['workflow_state'] == "Partially Completed") {
-						$('.dropdown-container').eq(1).after(survey_link)
+						$('.dropdown-list').eq(1).before(survey_link)
 					} else {
-						$('.dropdown-container').eq(2).after(survey_link)
+						$('.dropdown-list').eq(2).before(survey_link)
 					}
 				})
 
-				that.wrapper.find('.active-survey').on('click', (x)=>{
+				that.wrapper.find('.active-survey').on('click', (x) => {
 					frappe.ui.pages.survey.$title_area.text(x.target.text)
 					frappe.dom.freeze('Loading Your Form')
-					that.get_feedback_doc(x.target.text).then(()=>{
-						if (that.feedback_doc.workflow_state == "Completed"){
+					that.get_feedback_doc(x.target.text).then(() => {
+						if (that.feedback_doc.workflow_state == "Completed") {
 							that.render_end_screen()
 						} else {
 							that.render_section()
@@ -107,20 +113,20 @@ class Survey {
 				})
 			}
 		})
-		
+
 	}
 
-	get_feedback_doc(survey_name){
+	get_feedback_doc(survey_name) {
 		let that = this
-		return new Promise((resolve, reject)=>{
-			frappe.model.with_doc('User Feedback', frappe.session.user + "-" + survey_name).then((feedback_doc)=>{
-				frappe.model.with_doc('Survey', survey_name).then(async (survey_doc)=>{
-					for(let i=0; i < survey_doc.sections.length; i++){
+		return new Promise((resolve, reject) => {
+			frappe.model.with_doc('User Feedback', frappe.session.user + "-" + survey_name).then((feedback_doc) => {
+				frappe.model.with_doc('Survey', survey_name).then(async (survey_doc) => {
+					for (let i = 0; i < survey_doc.sections.length; i++) {
 						let sec_doc = await frappe.model.with_doc("Section", survey_doc.sections[i].section_link)
-						for(let j=0; j< sec_doc.questions.length; j++){
+						for (let j = 0; j < sec_doc.questions.length; j++) {
 							let qp_doc = await frappe.model.with_doc(sec_doc.questions[j].question_type, sec_doc.questions[j].question_parameters)
 							sec_doc.questions[j]["question_parameters_doc"] = qp_doc
-							
+
 						}
 						survey_doc.sections[i]["section_doc"] = sec_doc
 					}
@@ -130,59 +136,70 @@ class Survey {
 					resolve()
 				})
 			})
-		})		
+		})
 	}
 
-	render_section(){
+	render_section() {
 		let that = this
+		// debugger;
 		var current_section = this.feedback_doc.current_section
+		let html_str = `<div class="serveyConyent">
+							<div class="section-title row"><h1 class="title"></h1></div>
+							<div class="section-details row"><p></p></div>
+							<div class="section-questions row"></div>
+							<div class="section-footer row"></div>
+						</div>`
+		that.container.html(html_str)
+		this.container.find('.section-title h1').html('')
 		this.container.find('.section-title h1').html(this.feedback_doc.survey_doc.sections[current_section].section_doc.section_title)
+		this.container.find('.section-details p').html('')
 		this.container.find('.section-details p').html(this.feedback_doc.survey_doc.sections[current_section].section_doc.section_description)
 		this.container.find('.section-questions').html('')
-		if(current_section == this.feedback_doc.survey_doc.sections.length - 1){
+		if (current_section == this.feedback_doc.survey_doc.sections.length - 1) {
 			this.container.find('.section-footer').html(`<button class="submit-section erPrimaryBtn">Finish</button>`)
 		} else {
 			this.container.find('.section-footer').html(`<button class="submit-section erSecondaryBtn">Next</button>`)
 		}
-		this.feedback_doc.survey_doc.sections[current_section].section_doc.questions.forEach((q_doc, i)=>{
+		this.feedback_doc.survey_doc.sections[current_section].section_doc.questions.forEach((q_doc, i) => {
 			that.render_question(q_doc, i, current_section)
 		})
-		this.container.find(".submit-section").click(()=>{
+		this.container.find(".submit-section").click(() => {
 			that.validate_and_submit_section()
+			location.reload();
 		})
 
 	}
 
-	validate_and_submit_section(){
+	validate_and_submit_section() {
 		let that = this
 		let current_section = this.feedback_doc.current_section
 		let valid_responses = true
 		let error_messages = []
 		let responses = []
 		let scores = []
-		this.feedback_doc.survey_doc.sections[current_section].section_doc.questions.forEach((q_doc, i)=>{
+		this.feedback_doc.survey_doc.sections[current_section].section_doc.questions.forEach((q_doc) => {
 			let user_response = that.fetch_question_response(q_doc)
 			scores.push(that.score_question_response(q_doc, user_response))
 			responses.push(user_response)
 			let validation_response = that.validate_question_response(q_doc, user_response)
-			if (!validation_response['is_valid']){
+			if (!validation_response['is_valid']) {
 				valid_responses = false
 				error_messages.push(validation_response['error_message'])
 			}
 		})
-		if (valid_responses){
+		if (valid_responses) {
 			that.submit_section(responses, scores)
 		} else {
 			frappe.msgprint(error_messages.join("<br><br>"))
 		}
 	}
 
-	submit_section(responses, scores){
+	submit_section(responses, scores) {
 		let that = this
 		let current_section = this.feedback_doc.current_section
 		let questions = this.feedback_doc.survey_doc.sections[current_section].section_doc.questions
 		let qr_pairs = {}
-		for(var i =0; i < questions.length; i++){
+		for (var i = 0; i < questions.length; i++) {
 			qr_pairs[questions[i].name] = responses[i]
 		}
 		frappe.call({
@@ -194,8 +211,9 @@ class Survey {
 				current_section: current_section,
 				current_section_name: that.feedback_doc.survey_doc.sections[current_section].section_doc.name
 			},
-			callback: function(response){
-				if (that.feedback_doc.survey_doc.sections[current_section].section_doc.end_survey){
+			callback: function (response) {
+				if (that.feedback_doc.survey_doc.sections[current_section].section_doc.end_survey) {
+					
 					that.render_end_screen()
 				} else {
 					that.feedback_doc.current_section = response.message
@@ -205,25 +223,25 @@ class Survey {
 		})
 	}
 
-	render_end_screen(){
+	render_end_screen() {
 		let that = this
-		if(this.feedback_doc.survey_doc.survey_type == "Info"){
+		if (this.feedback_doc.survey_doc.survey_type == "Info") {
 			this.container.html(`<div class="col-md-12">
-			<div class="serveyConyent">` + this.feedback_doc.survey_doc.end_screen + 
-			`</div></div>`)
+			<div class="serveyConyent">` + this.feedback_doc.survey_doc.end_screen +
+				`</div></div>`)
 		} else {
 			frappe.call({
 				method: "formsnext.formsnext.doctype.user_feedback.user_feedback.get_results",
 				args: {
 					user_feedback: this.feedback_doc.name
 				},
-				callback: function(response){
-					if (that.feedback_doc.survey_doc.result_view == "Counts"){
+				callback: function (response) {
+					if (that.feedback_doc.survey_doc.result_view == "Counts") {
 						let correct_count = 0;
 						let wrong_count = 0;
-						Object.keys(response.message).forEach((qn)=>{
-							if(response.message[qn].score){
-								correct_count = correct_count +1
+						Object.keys(response.message).forEach((qn) => {
+							if (response.message[qn].score) {
+								correct_count = correct_count + 1
 							} else {
 								wrong_count = wrong_count + 1
 							}
@@ -242,65 +260,65 @@ class Survey {
 						</div>`
 						that.container.html(html_str)
 
-					} else if (that.feedback_doc.survey_doc.result_view == "Question Level"){
+					} else if (that.feedback_doc.survey_doc.result_view == "Question Level") {
 						let correct_count;
 						let wrong_count;
 						let table_str = `<div class="col-md-12">
-						<div class="serveyConyent"><table class="table table-hover"><tr><th>Question></th><th>Answer</th><th>Result</th><th>Feedback</th></tr>`
-						Object.keys(response.message).forEach((qn)=>{
-							if(response.message[qn].score){
+						<div class="serveyConyent"><table class="table table-hover"><tr><th>Question</th><th>Answer</th><th>Result</th><th>Feedback</th></tr>`
+						Object.keys(response.message).forEach((qn) => {
+							if (response.message[qn].score) {
 								correct_count = correct_count + 1
 							} else {
 								wrong_count = wrong_count + 1
 							}
-							table_str = table_str + `<tr><td>` + response.message[qn].question_string + 
-								`</td><td>` + response.message[qn].responses + 
+							table_str = table_str + `<tr><td>` + response.message[qn].question_string +
+								`</td><td>` + response.message[qn].responses +
 								`</td><td>` + response.message[qn].score +
-								`</td><td>` + (response.message[qn].score ? "" : response.message[qn].feedback_if_incorrect) + `</td></tr>` 
+								`</td><td>` + (response.message[qn].score ? "" : response.message[qn].feedback_if_incorrect) + `</td></tr>`
 						})
 						table_str = table_str + `</table></div></div>`
 						that.container.html(table_str)
 
-					} else if (that.feedback_doc.survey_doc.result_view == "Question Level With Correct"){
+					} else if (that.feedback_doc.survey_doc.result_view == "Question Level With Correct") {
 						let table_with_ans = `<div class="col-md-12">
 						<div class="serveyConyent"><table class="table table-hover"><tr><th>Question</th><th>Answer</th><th>Correct Answer</th><th>Result</th><th>Feedback</th></tr>`
-						that.feedback_doc.survey_doc.sections.forEach((sec)=>{
-							sec.section_doc.questions.forEach((qt)=>{
-								if(qt.evaluate){
+						that.feedback_doc.survey_doc.sections.forEach((sec) => {
+							sec.section_doc.questions.forEach((qt) => {
+								if (qt.evaluate) {
 									let correct_answers = that.get_correct_answers(qt)
-									table_with_ans = table_with_ans + `<tr><td>` + response.message[qt.name].question_string + 
-										`</td><td>` + response.message[qt.name].responses + 
-										`</td><td>` + correct_answers.join(" , ") + 
+									table_with_ans = table_with_ans + `<tr><td>` + response.message[qt.name].question_string +
+										`</td><td>` + response.message[qt.name].responses +
+										`</td><td>` + correct_answers.join(" , ") +
 										`</td><td>` + response.message[qt.name].score +
-										`</td><td>` + (response.message[qt.name].score ? "" : qt.feedback_if_incorrect) + `</td></tr>` 
+										`</td><td>` + (response.message[qt.name].score ? "" : qt.feedback_if_incorrect) + `</td></tr>`
 								}
 							})
 						})
 						table_with_ans = table_with_ans + `</table></div></div>`
 						that.container.html(table_with_ans)
 					}
-					
+
 				}
 			})
 		}
 	}
 
-	get_correct_answers(qt){
+	get_correct_answers(qt) {
 		let correct_answers = []
-		switch(qt.question_type) {
+		switch (qt.question_type) {
 			case 'Single Value Question':
 				correct_answers = [qt.question_parameters_doc.correct_value]
 				break;
 			case 'Multiple Choice Question':
-				qt.question_parameters_doc.question_choices.forEach((qc)=>{
-					if (qc.should_be_selected){
+				qt.question_parameters_doc.question_choices.forEach((qc) => {
+					if (qc.should_be_selected) {
 						correct_answers.push(qc.value)
 					}
 				})
 				break;
 			case 'Grid Question':
-				qt.question_parameters_doc.grid_options.forEach((go)=>{
-					if (go.should_be_selected){
+				qt.question_parameters_doc.grid_options.forEach((go) => {
+					if (go.should_be_selected) {
 						correct_answers.push(qo.value)
 					}
 				})
@@ -313,11 +331,11 @@ class Survey {
 		return correct_answers
 	}
 
-	fetch_question_response(q_doc){
+	fetch_question_response(q_doc) {
 		let response = []
-		switch(q_doc.question_type) {
+		switch (q_doc.question_type) {
 			case 'Single Value Question':
-				switch(q_doc.question_parameters_doc.type){
+				switch (q_doc.question_parameters_doc.type) {
 					case 'Date':
 						response.push({
 							value: q_doc.question_container.find("input").val(),
@@ -363,7 +381,7 @@ class Survey {
 				}
 				break;
 			case 'Multiple Choice Question':
-				switch(q_doc.question_parameters_doc.display_type){
+				switch (q_doc.question_parameters_doc.display_type) {
 					case 'Dropdown':
 						response.push({
 							value: q_doc.question_container.find("option:selected").val(),
@@ -377,7 +395,7 @@ class Survey {
 						})
 						break;
 					case 'Checkbox':
-						q_doc.question_container.find("input:checked").each((s)=>{
+						q_doc.question_container.find("input:checked").each((s) => {
 							response.push({
 								value: q_doc.question_container.find("input:checked").eq(s).val(),
 								datatype: "String"
@@ -400,14 +418,14 @@ class Survey {
 		return response
 	}
 
-	validate_question_response(q_doc, response){
+	validate_question_response(q_doc, response) {
 		let is_valid;
 		let error_message;
-		switch(q_doc.question_type) {
+		switch (q_doc.question_type) {
 			case 'Single Value Question':
-				switch(q_doc.question_parameters_doc.type){
+				switch (q_doc.question_parameters_doc.type) {
 					case 'Date':
-						if (response[0].value == "" && q_doc.mandatory){
+						if (response[0].value == "" && q_doc.mandatory) {
 							is_valid = false
 							error_message = q_doc.question_string + " <b>is mandatory</b>"
 						} else {
@@ -416,7 +434,7 @@ class Survey {
 						}
 						break
 					case 'Time':
-						if (response[0].value == "" && q_doc.mandatory){
+						if (response[0].value == "" && q_doc.mandatory) {
 							is_valid = false
 							error_message = q_doc.question_string + " <b>is mandatory</b>"
 						} else {
@@ -425,7 +443,7 @@ class Survey {
 						}
 						break;
 					case 'Datetime':
-						if (response[0].value == "" && q_doc.mandatory){
+						if (response[0].value == "" && q_doc.mandatory) {
 							is_valid = false
 							error_message = q_doc.question_string + " <b>is mandatory</b>"
 						} else {
@@ -434,16 +452,16 @@ class Survey {
 						}
 						break;
 					case 'Float':
-						if (response[0].value == "" && q_doc.mandatory){
+						if (response[0].value == "" && q_doc.mandatory) {
 							is_valid = false
 							error_message = q_doc.question_string + " <b>is mandatory</b>"
 						} else {
-							if(response[0].value >= q_doc.question_parameters_doc.minimum_value){
+							if (response[0].value >= q_doc.question_parameters_doc.minimum_value) {
 								is_valid = true
 								error_message = ""
-								if (q_doc.question_parameters_doc.maximum_value !=0 && response[0].value > q_doc.question_parameters_doc.maximum_value){
+								if (q_doc.question_parameters_doc.maximum_value != 0 && response[0].value > q_doc.question_parameters_doc.maximum_value) {
 									is_valid = false
-									error_message = "<b>Data Too Large in</b> " + q_doc.question_string 
+									error_message = "<b>Data Too Large in</b> " + q_doc.question_string
 								}
 							} else {
 								is_valid = false
@@ -452,14 +470,14 @@ class Survey {
 						}
 						break;
 					case 'Int':
-						if (response[0].value == "" && q_doc.mandatory){
+						if (response[0].value == "" && q_doc.mandatory) {
 							is_valid = false
 							error_message = q_doc.question_string + " <b>is mandatory</b>"
 						} else {
-							if(response[0].value >= q_doc.question_parameters_doc.minimum_value){
+							if (response[0].value >= q_doc.question_parameters_doc.minimum_value) {
 								is_valid = true
 								error_message = ""
-								if (q_doc.question_parameters_doc.maximum_value !=0 && response[0].value > q_doc.question_parameters_doc.maximum_value){
+								if (q_doc.question_parameters_doc.maximum_value != 0 && response[0].value > q_doc.question_parameters_doc.maximum_value) {
 									is_valid = false
 									error_message = "<b>Data Too Large in</b> " + q_doc.question_string
 								}
@@ -470,15 +488,15 @@ class Survey {
 						}
 						break;
 					case 'Text':
-						if (response[0].value == "" && q_doc.mandatory){
+						if (response[0].value == "" && q_doc.mandatory) {
 							is_valid = false
 							error_message = q_doc.question_string + " <b>is mandatory</b>"
 						} else {
 							console.log(response, q_doc.question_parameters_doc.minimum_length)
-							if(response[0].value.length >= q_doc.question_parameters_doc.minimum_length){
+							if (response[0].value.length >= q_doc.question_parameters_doc.minimum_length) {
 								is_valid = true
 								error_message = ""
-								if (q_doc.question_parameters_doc.maximum_length !=0 && response[0].value.length > q_doc.question_parameters_doc.maximum_length){
+								if (q_doc.question_parameters_doc.maximum_length != 0 && response[0].value.length > q_doc.question_parameters_doc.maximum_length) {
 									is_valid = false
 									error_message = "<b>Data Too Long in</b> " + q_doc.question_string
 								}
@@ -489,14 +507,14 @@ class Survey {
 						}
 						break;
 					case 'Paragraph':
-						if (response[0].value == "" && q_doc.mandatory){
+						if (response[0].value == "" && q_doc.mandatory) {
 							is_valid = false
 							error_message = q_doc.question_string + " <b>is mandatory</b>"
 						} else {
-							if(response[0].value.length >= q_doc.question_parameters_doc.minimum_length){
+							if (response[0].value.length >= q_doc.question_parameters_doc.minimum_length) {
 								is_valid = true
 								error_message = ""
-								if (q_doc.question_parameters_doc.maximum_length !=0 && response[0].value.length > q_doc.question_parameters_doc.maximum_length){
+								if (q_doc.question_parameters_doc.maximum_length != 0 && response[0].value.length > q_doc.question_parameters_doc.maximum_length) {
 									is_valid = false
 									error_message = "<b>Data Too Long in</b> " + q_doc.question_string
 								}
@@ -508,29 +526,29 @@ class Survey {
 						break;
 				}
 				break;
-				
+
 			case 'Multiple Choice Question':
 				is_valid = true
 				error_message = ""
-				if (q_doc.question_parameters_doc.display_type == "Checkbox"){
-					if (q_doc.question_parameters_doc.select_exactly !=0 && response.length != q_doc.question_parameters_doc.select_exactly){
+				if (q_doc.question_parameters_doc.display_type == "Checkbox") {
+					if (q_doc.question_parameters_doc.select_exactly != 0 && response.length != q_doc.question_parameters_doc.select_exactly) {
 						is_valid = false
 						error_message = "<b>You need to select exactly " + q_doc.question_parameters_doc.select_exactly + " in</b> " + q_doc.question_string
-					} else if (response.length < q_doc.question_parameters_doc.select_at_least){
+					} else if (response.length < q_doc.question_parameters_doc.select_at_least) {
 						is_valid = false
 						error_message = "<b>You need to select atleast " + q_doc.question_parameters_doc.select_at_least + " in</b> " + q_doc.question_string
-					} else if (q_doc.question_parameters_doc.select_at_most != 0 && response.length > q_doc.question_parameters_doc.select_at_most){
+					} else if (q_doc.question_parameters_doc.select_at_most != 0 && response.length > q_doc.question_parameters_doc.select_at_most) {
 						is_valid = false
 						error_message = "<b>You need to less than " + q_doc.question_parameters_doc.select_at_most + " in</b> " + q_doc.question_string
 					}
-				} else if (q_doc.question_parameters_doc.display_type == "List"){
-					if (q_doc.mandatory && response[0].value == undefined){
+				} else if (q_doc.question_parameters_doc.display_type == "List") {
+					if (q_doc.mandatory && response[0].value == undefined) {
 						is_valid = false
 						error_message = q_doc.question_string + " <b>is mandatory/<b>"
 					}
 				}
-				else if (q_doc.question_parameters_doc.display_type == "Dropdown"){
-					if (q_doc.mandatory && response[0].value == ""){
+				else if (q_doc.question_parameters_doc.display_type == "Dropdown") {
+					if (q_doc.mandatory && response[0].value == "") {
 						is_valid = false
 						error_message = q_doc.question_string + " <b>is mandatory</b>"
 					}
@@ -539,14 +557,14 @@ class Survey {
 			case 'Grid Question':
 				is_valid = true
 				error_message = ""
-				if (q_doc.question_parameters.row_type == "Checkbox"){
-					if (q_doc.question_parameters_doc.select_exactly !=0 && response.length != q_doc.question_parameters_doc.select_exactly){
+				if (q_doc.question_parameters.row_type == "Checkbox") {
+					if (q_doc.question_parameters_doc.select_exactly != 0 && response.length != q_doc.question_parameters_doc.select_exactly) {
 						is_valid = false
 						error_message = "<b>You need to select exactly " + q_doc.question_parameters_doc.select_exactly + " in</b> " + q_doc.question_string
-					} else if (response.length < q_doc.question_parameters_doc.select_at_least){
+					} else if (response.length < q_doc.question_parameters_doc.select_at_least) {
 						is_valid = false
 						error_message = "<b>You need to select atleast " + q_doc.question_parameters_doc.select_at_least + " in</b> " + q_doc.question_string
-					} else if (q_doc.question_parameters_doc.select_at_most != 0 && response.length > q_doc.question_parameters_doc.select_at_most){
+					} else if (q_doc.question_parameters_doc.select_at_most != 0 && response.length > q_doc.question_parameters_doc.select_at_most) {
 						is_valid = false
 						error_message = "<b>You need to less than " + q_doc.question_parameters_doc.select_at_most + " in</b> " + q_doc.question_string
 					}
@@ -567,59 +585,59 @@ class Survey {
 		}
 	}
 
-	score_question_response(q_doc, response){
+	score_question_response(q_doc, response) {
 		let that = this
 		let score = 0
 		let correct_values = []
-		let answers = []		
-		switch(q_doc.question_type) {
+		let answers = []
+		switch (q_doc.question_type) {
 			case 'Single Value Question':
-				if(response[0].value == q_doc.question_parameters_doc.correct_value){
+				if (response[0].value == q_doc.question_parameters_doc.correct_value) {
 					score = 1
 				}
 				break;
 			case 'Multiple Choice Question':
-				q_doc.question_parameters_doc.question_choices.forEach((v)=>{
-					if (v.should_be_selected == 1){
+				q_doc.question_parameters_doc.question_choices.forEach((v) => {
+					if (v.should_be_selected == 1) {
 						correct_values.push(v.value)
 					}
 				})
 				score = 1
-				response.forEach((v)=>{
-					if (! correct_values.includes(v.value)){
-						score = 0 
+				response.forEach((v) => {
+					if (!correct_values.includes(v.value)) {
+						score = 0
 					}
 					answers.push(v.value)
 				})
 
-				correct_values.forEach((v)=>{
-					if (! answers.includes(v)){
-						score = 0 
+				correct_values.forEach((v) => {
+					if (!answers.includes(v)) {
+						score = 0
 					}
 				})
 				break;
 			case 'Grid Question':
-				q_doc.question_parameters_doc.grid_options.forEach((v)=>{
-					if (v.should_be_selected == 1){
+				q_doc.question_parameters_doc.grid_options.forEach((v) => {
+					if (v.should_be_selected == 1) {
 						correct_values.push(v.value)
 					}
 				})
 				score = 1
-				response.forEach((v)=>{
-					if (! correct_values.includes(v.value)){
+				response.forEach((v) => {
+					if (!correct_values.includes(v.value)) {
 						answers.push(v.value)
-						score = 0 
+						score = 0
 					}
 				})
 
-				correct_values.forEach((v)=>{
-					if (! answers.includes(v)){
-						score = 0 
+				correct_values.forEach((v) => {
+					if (!answers.includes(v)) {
+						score = 0
 					}
 				})
 				break;
 			case 'Linear Scale Question':
-				if(response[0].value == q_doc.question_parameters_doc.correct_value){
+				if (response[0].value == q_doc.question_parameters_doc.correct_value) {
 					score = 1
 				}
 				break;
@@ -629,11 +647,11 @@ class Survey {
 		return score
 	}
 
-	render_question(q_doc, q_doc_seq, current_section){
+	render_question(q_doc, q_doc_seq, current_section) {
 		let question_html = ""
-		switch(q_doc.question_type) {
+		switch (q_doc.question_type) {
 			case 'Single Value Question':
-				switch(q_doc.question_parameters_doc.type){
+				switch (q_doc.question_parameters_doc.type) {
 					case 'Date':
 						question_html = `<div class="question-container row">
 							<h2>` + q_doc.question_string + `</h2>
@@ -693,15 +711,15 @@ class Survey {
 				}
 				break;
 
-				
-									
-								
-				
+
+
+
+
 			case 'Multiple Choice Question':
-				switch(q_doc.question_parameters_doc.display_type){
+				switch (q_doc.question_parameters_doc.display_type) {
 					case 'Dropdown':
 						let select_options = ""
-						q_doc.question_parameters_doc.question_choices.forEach((ch)=>{
+						q_doc.question_parameters_doc.question_choices.forEach((ch) => {
 							select_options = select_options + '<option value="' + ch.value + '">' + ch.display_text + '</option>'
 						})
 						question_html = `<div class="question-container row">
@@ -712,7 +730,7 @@ class Survey {
 						break;
 					case 'List':
 						let list_inputs = ""
-						q_doc.question_parameters_doc.question_choices.forEach((ch)=>{
+						q_doc.question_parameters_doc.question_choices.forEach((ch) => {
 							list_inputs = list_inputs + `<label class="radioContainer"><input type="radio" name="choices" value="` + ch.value + `"><span class="checkmark"></span>` + ch.display_text + `</label>`
 						})
 						question_html = `<div class="question-container row">
@@ -721,7 +739,7 @@ class Survey {
 						break;
 					case 'Checkbox':
 						let form_inputs = ""
-						q_doc.question_parameters_doc.question_choices.forEach((ch)=>{
+						q_doc.question_parameters_doc.question_choices.forEach((ch) => {
 							form_inputs = form_inputs + `<label class="checkboxContainer"><input type="checkbox" name="choices" value="` + ch.value + `">` + ch.display_text + `<span class="checkboxCheckmark"></span> </label>`
 						})
 						question_html = `<div class="question-container row">
@@ -731,25 +749,25 @@ class Survey {
 				}
 				break;
 			case 'Grid Question':
-				break;	
+				break;
 			case 'Linear Scale Question':
 				question_html = `<div class="question-container row">
 					<h2>` + q_doc.question_string + `</h2>
-					<div class="form-group"><div class="col-md-6 padding0"><form action="" class="rangeNumber"><span class="">` + 
-					q_doc.question_parameters_doc.lower_limit + `</span><input type="range" min="` +  
-				q_doc.question_parameters_doc.lower_limit + `" max="` + 
-				q_doc.question_parameters_doc.upper_limit + `"><span class="">` + q_doc.question_parameters_doc.upper_limit + `</span></form></div></div></div><hr/>`
+					<div class="form-group"><div class="col-md-6 padding0"><form action="" class="rangeNumber"><span class="">` +
+					q_doc.question_parameters_doc.lower_limit + `</span><input type="range" min="` +
+					q_doc.question_parameters_doc.lower_limit + `" max="` +
+					q_doc.question_parameters_doc.upper_limit + `"><span class="">` + q_doc.question_parameters_doc.upper_limit + `</span></form></div></div></div><hr/>`
 				break;
 			case 'File Upload Question':
 				break;
 		}
 		this.container.find('.section-questions').append(question_html)
-		this.feedback_doc.survey_doc.sections[current_section].section_doc.questions[q_doc_seq]["question_container"] = this.container.find('.question-container').eq(q_doc_seq)				
+		this.feedback_doc.survey_doc.sections[current_section].section_doc.questions[q_doc_seq]["question_container"] = this.container.find('.question-container').eq(q_doc_seq)
 	}
 }
 
 
-const getLink = function(url, id) {
+const getLink = function (url, id) {
 	return new Promise(((resolve, reject) => {
 		const link = document.createElement('link');
 		link.setAttribute('rel', 'stylesheet');
@@ -762,7 +780,7 @@ const getLink = function(url, id) {
 	}));
 }
 
-frappe.pages['survey'].on_page_load = function(wrapper) {
+frappe.pages['survey'].on_page_load = function (wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
 		title: 'Survey',
@@ -777,7 +795,7 @@ frappe.pages['survey'].on_page_load = function(wrapper) {
 	}
 	window.__loading_dependencies = new Promise(async (resolve, reject) => {
 		await getLink('/assets/formsnext/css/survey.css', 'dashboard-base-theme');
-		resolve();		
+		resolve();
 	}).catch(e => {
 		reject(e);
 	});
@@ -801,9 +819,8 @@ frappe.require([
 
 $(function () {
 	$("#datepicker").datepicker({
-		  autoclose: true, 
-		  todayHighlight: true
+		autoclose: true,
+		todayHighlight: true
 	}).datepicker('update', new Date());
-  });
+});
 
-  

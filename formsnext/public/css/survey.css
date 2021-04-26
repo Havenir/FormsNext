@@ -47,6 +47,14 @@ body{
     --dashboard-background-color: #fff;
     --dashboard-font-color: #36414c;
   }
+
+  /* Fixing the page title cutting off */
+.page-title {
+  width: 100%;
+}
+.ellipsis {
+  overflow: visible;
+}
   
   .dashboard-graph .row {
     /* padding: 7px 15px 0px 15px; */
